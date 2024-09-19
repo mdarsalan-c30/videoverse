@@ -1,41 +1,26 @@
-import streamlit as st
-import yt_dlp as youtube_dl
-import os
+import gradio as gr
+from pytube import YouTube
 
-def download_video(url, download_path):
+def download_video(url):
     if not url:
-        st.error("Please enter a valid URL.")
-        return
-
-    if not download_path:
-        st.error("Please select a download folder.")
-        return
+        return "Error: Please enter a valid URL."
 
     try:
-        ydl_opts = {
-            'outtmpl': os.path.join(download_path, '%(title)s.%(ext)s'),  # Save video in selected folder
-            'format': 'best',
-        }
-
-        # Download the video
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
-        st.success(f"Video downloaded successfully to {download_path}!")
+        yt = YouTube(url)
+        video = yt.streams.get_highest_resolution()
+        video.download('/content')  # Save in Colab's content directory
+        return f"Video '{video.title}' downloaded successfully!"
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        return f"An error occurred: {str(e)}"
 
-# Create Streamlit app
-st.title("YouTube Video Downloader")
+# Create a Gradio interface
+iface = gr.Interface(
+    fn=download_video,
+    inputs=gr.Textbox(label="Enter YouTube URL", placeholder="https://www.youtube.com/watch?v=..."),
+    outputs=gr.Textbox(label="Status", interactive=False),
+    title="YouTube Video Downloader",
+    description="Enter the URL of the YouTube video you want to download and press the button."
+)
 
-# URL input
-url = st.text_input("Enter YouTube URL:")
-
-# Folder selection
-download_path = st.text_input("Download folder:", os.getcwd())  # Default to current working directory
-if st.button("Browse"):
-    download_path = st.text_input("Enter download path manually:", os.getcwd())  # Placeholder for folder browsing
-
-# Download Button
-if st.button("Download"):
-    download_video(url, download_path)
+# Launch the app
+iface.launch()
