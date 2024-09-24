@@ -1,37 +1,19 @@
 import streamlit as st
-import yt_dlp as youtube_dl
+import yt_dlp
 import os
+import concurrent.futures
 
-def download_video(url):
-    output_dir = "/tmp"  # Use a temporary directory
-    ydl_opts = {
-        'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
-        'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]',
-    }
-
-    try:
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=True)
-            video_file = os.path.join(output_dir, f"{info_dict['title']}.{info_dict['ext']}")
-        return video_file
-    except Exception as e:
-        st.error(f"Error downloading video: {e}")
-        return None
+# Function definitions (download_video and merge_audio_video) go here
 
 st.title("YouTube Video Downloader")
 
-url = st.text_input("Enter YouTube URL:")
+video_url = st.text_input("Enter YouTube Video URL:")
+output_folder = "/content"
+
 if st.button("Download"):
-    if url:
-        video_file = download_video(url)
-        if video_file:
-            with open(video_file, "rb") as f:
-                st.download_button(
-                    label="Download Video",
-                    data=f,
-                    file_name=os.path.basename(video_file),
-                    mime="video/mp4"
-                )
-            st.success("Video downloaded successfully!")
+    if video_url:
+        video_file, audio_file, output_file = download_video(video_url, output_folder)
+        merge_audio_video(video_file, audio_file, output_file)
+        st.success(f"Video downloaded and merged! [Download Here]({output_file})")
     else:
         st.error("Please enter a valid URL.")
